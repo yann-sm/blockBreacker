@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Block Breaker</title>
+
+	<style type="text/css">
+
+		* {
+			padding: 0;
+			margin: 0;
+		}
+		canvas {
+			background-color: #eee;
+			display: block;
+			margin: 0 auto;
+			border-radius: 5px;
+		}
+		
+
+		#myCanvas {
+			margin-top: 30px;
+			box-shadow: 2px 2px 6px;
+		
+		}
+
+
+	</style>
+</head>
+<body>
+
+	<canvas id="myCanvas" width="480" height="320"></canvas>
+
+	<script type="text/javascript">
+
+			/* COURS - DESSINER EN JAVASCRIPT -
+			//ici on dessine un carre :
+			ctx.beginPath();
+			ctx.rect(20, 40, 50, 50);
+			ctx.fillStyle = "#FFOOOO";
+			ctx.fill();
+			ctx.closePath;
+
+			//ici on dessine un cercle :
+			ctx.beginPath();
+			ctx.arc(240, 160, 20, 0, Math.PI*2, false);
+			ctx.fillStyle = "green";
+			ctx.fill();
+			ctx.closePath();
+
+			//ici on dessine un rectangle :
+			ctx.beginPath();
+			ctx.rect(160, 10, 100, 40);
+			ctx.strokeStyle = "rgba(0, 0, 255, 0.5)";//stroke pour dessiné uniquement le contoure
+			ctx.stroke();
+			ctx.closePath();
+			*/
+
+/*  VARIABLES  */
+			//on definit nottre canvas pour le rendu graphique
+			let canvas = document.getElementById('myCanvas');
+			let ctx = canvas.getContext("2d");
+			//variable contenant le rayon de la ball :
+			let ballRadius = 5;
+			//on definit la position de départ avec 2 variables x et y :
+			let x = canvas.width/2;
+			let y = canvas.height-30;
+			// on definit 2 variables pour le deplacement :
+			let dx = 2;
+			let dy = -2; 
+			//definition de la barre pour frapper la balle :
+			let paddleHeight = 10; // hauteur 
+			let paddleWidth = 75; // largeur
+			let paddleX = (canvas.width-paddleWidth/2); // position dans le canvas
+			//controle deplacement barre :
+			let rightPressed = false;
+			let leftPressed = false;
+			// configuration des variables des briques :
+			let brickRowCount = 5; // nombre de rangéees
+			let brickColumnCount = 9; // nombre de colonne
+			let brickWidth = 38; // largeur
+			let brickHeight = 15; // hauteur
+			let brickPadding = 10; // espace entre les briques
+			let brickOffsetTop = 30; // decalage en haut du canvas
+			let brickOffsetLeft = 30; // decalage à gauche du canvas
+			//variable score :
+			let score = 0;
+			//variable de vie :
+			let lives = 3;
+
+		
+			//tableau pour dessiner les briques :
+			let bricks = [];
+			for(let c = 0; c < brickColumnCount; c++){
+				bricks[c] = []; 
+				for(let r = 0; r < brickRowCount; r++){
+					bricks[c][r] = {x: 0, y: 0, status: 1};
+				}
+			}
+
+
+/*  FONCTIONS  */
+	 		//Ecouteur d'evenement souris :
+			document.addEventListener("mousemove", mouseMoveHandler, false);
+			function mouseMoveHandler(e){
+				let relativeX = e.clientX - canvas.offsetLeft;
+				if(relativeX > 0 && relativeX < canvas.width){
+					paddleX = relativeX - paddleWidth/2;
+				}
+			}
+
+			document.addEventListener("keydown", keyDownHandler, false);
+			document.addEventListener("keyup", keyUpHandler, false);
+			// key contient les information des touche enfoncé - et e represente la variable-
+			function keyDownHandler(e){
+				if(e.key == "right" || e.key == "ArrowRight"){
+					rightPressed = true;
+				}
+				else if(e.key == "left" || e.key == "ArrowLeft"){
+					leftPressed = true;
+				}
+			}
+
+			function keyUpHandler(e){
+				if(e.key == "right" || e.key == "ArrowRight"){
+					rightPressed = false;
+				}
+				else if(e.key == "left" || e.key == "ArrowLeft"){
+					leftPressed = false;
+				}
+			}
+
+			//fonction de detection de colision :
+			function collisionDetection(){
+				for(let c = 0; c < brickColumnCount; c++){
+					for(let r = 0; r < brickRowCount; r++){
+						let b = bricks[c][r];
+						if(b.status == 1){
+							if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight){
+								dy = -dy;
+								b.status = 0;
+								//pour incrémenter le score a chaque colision avec une brique :
+								score++;
+								if (score == brickRowCount*brickColumnCount) {
+									alert("YOU WIN, CONGRATULATION !!!");
+									document.location.reload();
+									//clearInterval(interval);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			//function pour calculer le score :
+			function drawScore(){
+				ctx.font = "16px Arial";
+				ctx.fillStyle = "#0095DD";
+				ctx.fillText("score: "+score, 8, 20);
+			}
+
+			// fonction pour dessiner le compteur de vie :
+			function drawLives(){
+				ctx.font = "16px Arial";
+				ctx.fillStyle = "#0095DD";
+				ctx.fillText("Lives :"+lives, canvas.width-65, 20);
+			}
+
+			//on dessine la ball
+			function drawBall(){
+			/*	//creation d'une couleur en degrader :
+				let gradient = createRadialGradient(45, 45, 10, 52, 50, 30);
+				gradient.addColorStop(0, '#A7D30C');
+				gradient.addColorStop(0.9, '#019F62');
+				gradient.addColorStop(1, 'rgba(1, 159, 98, 0)');*/
+
+				ctx.beginPath();
+				ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+				ctx.fillStyle = "#0095DD";
+				ctx.shadowBlur = 0;
+				ctx.fill();
+				ctx.closePath();
+			}
+
+			function drawPaddle(){
+				ctx.beginPath();
+				ctx.rect(paddleX, canvas.height-paddleHeight, paddleWidth, paddleHeight);
+				ctx.fillStyle = "darkRed";
+				ctx.fill();
+				ctx.closePath();
+			}
+
+			function drawBricks(){
+				for(let c = 0; c < brickColumnCount; c++){
+					for(let r = 0; r < brickRowCount; r++){
+						if(bricks[c][r].status == 1){
+							//pour calculer la position de chaque brique a chaque iteration de la boucle:
+							let brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+							let brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+							bricks[c][r].x = brickX;
+							bricks[c][r].y = brickY;
+							// dessiner les briques :
+							ctx.beginPath();
+							ctx.rect(brickX, brickY, brickWidth, brickHeight);
+							ctx.radius = "5";
+							ctx.fillStyle = getRandomColor();
+							ctx.shadowColor = "black";
+							ctx.shadowBlur = 11;
+							ctx.fill();
+							ctx.closePath();
+						}
+					}
+				}
+			}
+
+			//generateur de couleur aléatoire :
+			function getRandomColor() {
+		        let letters = '0123456789ABCDEF';
+			    let color = '#';
+			    for (let i = 0; i < 6; i++) {
+		       		color += letters[Math.floor(Math.random() * 16)];
+		    	}
+			   return color;
+		  	}
+
+			//on dessine le mouvement de la ball
+			function draw(){
+				ctx.clearRect(0, 0, canvas.width, canvas.height);//pour supprimer l'ancienne position(ou dessin)
+				drawBricks();
+				drawBall();
+				drawPaddle();
+				drawScore();
+				drawLives();
+				collisionDetection();
+				// rebond gauche et droite :
+				if( x + dx > canvas.width - ballRadius || x + dx < ballRadius){
+					dx = -dx;
+				}
+				// rebond si touche le haut  :
+				if(y + dy < ballRadius){
+					dy = -dy;
+				}
+				// rebondit si touche la barre :
+				else if(y + dy > canvas.height - ballRadius){
+					if(x > paddleX && x < paddleX + paddleWidth){
+						dy = -dy;
+					}
+					//si non, elle touche le bas et c'est game over : 
+					else {
+						lives--;
+						if(!lives){
+							alert('GAME OVER');
+							document.location.reload();
+						}
+						else {
+							x = canvas.width/2;
+							y = canvas.height-30;
+							dx = 3;
+							dy = -3;
+							paddleX = (canvas.width-paddleWidth)/2;
+						}
+
+					}
+				}
+				
+
+		/*	*/	if(rightPressed){
+					paddleX += 7;
+					if(paddleX + paddleWidth > canvas.width){
+						paddleX = canvas.width - paddleWidth;
+					}
+				}
+				else if(leftPressed){
+					paddleX -= 7;
+					if(paddleX < 0){
+						paddleX = 0;
+					}
+				}
+				x += dx;
+				y += dy;
+				//remplace set interval pour un meilleur rendu : 
+				requestAnimationFrame(draw);
+			}
+			// ici on appelle la fonction draw toute les 10 miliseconde :
+			//let interval = setInterval(draw, 10);
+			draw();
+
+	/*		//Explication rebond haut et bas -
+			//rebond sur le mur du haut :
+			//(les coordonnees commence du coin supereieur gauche)
+			// si la ball touche le mur du haut, alors on inverse la direction de la ball pour créer un effet de limite de zone de jeu:
+			if(y + dy < 0){
+				dy = -dy;
+			}
+			//si la position y de la ball est < 0, on change la direction du mouvementsur l'axe y juste en inversant le signe de deplacement de la ball.
+
+			//rebond sur le bas :
+			//si la position y de la balle est superieur à la hauteur du canvas(480px ici)on inverse le mouvement de la balle :
+			if(y + dy > canvas.height){
+				dy = -dy
+			}
+		
+		// rebond haut et bas pour le code :
+		if(y + dy > canvas.height || y + dy < 0){
+			dy = -dy;
+		}
+
+		// rebond gauche et droite :
+		if( x + dx < canvas.width || x + dx < 0){
+			dx = -dx;
+		}
+		// on integre le tout à la fonction draw !!
+		*/
+	</script>
+
+</body>
+</html>
